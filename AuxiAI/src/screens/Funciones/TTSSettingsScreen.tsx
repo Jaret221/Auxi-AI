@@ -13,7 +13,7 @@ import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Asegúrate de tener esta imagen en tus assets o usa una URL
-const BACKGROUND_IMAGE = require('../../assets/Fondos/setings.png'); // Cambia por tu imagen
+const BACKGROUND_IMAGE = require('../../../assets/Fondos/setings.png'); 
 
 const VoiceSettings = ({ navigation }) => {
   const [rate, setRate] = useState(0.8);

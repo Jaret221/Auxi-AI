@@ -1,18 +1,18 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Button,
   FlatList,
   StyleSheet,
-  ImageBackground,
+  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Animated,
+  ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { sendMessage } from '../../servicios/chatService';
+import { guardarHistorial } from '../../servicios/historialService';
 
 type Message = {
   id: string;
@@ -20,138 +20,173 @@ type Message = {
   from: 'user' | 'bot';
 };
 
+const emergencyOptions = [
+  { label: "🩸 Heridas y Sangrado", value: "herida sangrado", severity: "grave" },
+  { label: "☀️ Insolación / Golpe de Calor", value: "insolación", severity: "moderado" },
+  { label: "🦴 Fractura Ósea", value: "fractura", severity: "grave" },
+  { label: "😮‍💨 Asfixia", value: "asfixia", severity: "grave" },
+  { label: "⚡ Convulsiones", value: "convulsiones", severity: "grave" },
+  { label: "😵 Desmayo", value: "desmayo", severity: "moderado" },
+];
+
+const severityColors: Record<string, string> = {
+  leve: "#28a745",
+  moderado: "#ffc107",
+  grave: "#dc3545",
+};
+
 export const ChatScreen = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const flatListRef = useRef<FlatList>(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  const handleSend = async (text?: string, gravedad?: string) => {
+    const userInput = text || input;
+    if (!userInput) return;
 
-    const userMsg: Message = { id: Date.now().toString(), text: input, from: 'user' };
+    await guardarHistorial(userInput, 'user', gravedad);
+
+    const userMsg: Message = { id: Date.now().toString(), text: userInput, from: 'user' };
     setMessages((prev) => [...prev, userMsg]);
-    setInput('');
 
-    const response = await sendMessage(input);
+    const response = await sendMessage(userInput);
     const botMsg: Message = { id: (Date.now() + 1).toString(), text: response, from: 'bot' };
     setMessages((prev) => [...prev, botMsg]);
+
+    await guardarHistorial(response, 'bot');
+
+    setInput('');
   };
 
-  useEffect(() => {
-    flatListRef.current?.scrollToEnd({ animated: true });
-
-    // Animación suave de burbujas
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [messages]);
-
-  const renderItem = ({ item }: { item: Message }) => {
-    const isUser = item.from === 'user';
-    return (
-      <Animated.View
-        style={[
-          styles.msgContainer,
-          isUser ? styles.userMsg : styles.botMsg,
-          { opacity: fadeAnim },
-        ]}
-      >
-        <Ionicons
-          name={isUser ? 'person-circle' : 'chatbubble-ellipses'}
-          size={30}
-          color={isUser ? '#0f5132' : '#842029'}
-          style={{ marginRight: 5 }}
-        />
-        <Text style={styles.msgText}>{item.text}</Text>
-      </Animated.View>
-    );
-  };
+  const rows: typeof emergencyOptions[][] = [];
+  for (let i = 0; i < emergencyOptions.length; i += 3) {
+    rows.push(emergencyOptions.slice(i, i + 3));
+  }
 
   return (
-    <ImageBackground
-      source={require('../../../assets/AuxiFondo.png')}
-      style={styles.background}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 20}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
-        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{ padding: 10 }}
-            renderItem={renderItem}
-          />
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        {/* 🔹 Grid de botones de emergencia */}
+        <View style={styles.gridContainer}>
+          {rows.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.row}>
+              {row.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.emergencyButton, { backgroundColor: severityColors[option.severity] }]}
+                  onPress={() => handleSend(option.value, option.severity)}
+                >
+                  <Text style={styles.emergencyText}>{option.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </View>
 
+        {/* 🔹 Lista de mensajes */}
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={item.from === 'user' ? styles.userMsg : styles.botMsg}>
+              <Text style={styles.msgText}>{item.text}</Text>
+            </View>
+          )}
+          style={styles.chatList}
+        />
+
+        {/* 🔹 Input y botón */}
+        <View style={styles.inputWrapper}>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
               value={input}
               onChangeText={setInput}
               placeholder="Escribe tu mensaje..."
-              multiline
             />
-            <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-              <Ionicons name="send" size={24} color="#fff" />
+            <TouchableOpacity style={styles.sendButton} onPress={() => handleSend()}>
+              <Text style={styles.sendButtonText}>Enviar</Text>
             </TouchableOpacity>
           </View>
+
+          {/* 🔹 Borde/espacio debajo del input */}
+          <View style={styles.bottomBorder} />
         </View>
-      </KeyboardAvoidingView>
-    </ImageBackground>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  background: { flex: 1 },
-  msgContainer: {
-    flexDirection: 'row',
+  container: { flex: 1, backgroundColor: '#fff' },
+
+  gridContainer: { marginTop: 50, marginBottom: 10 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  emergencyButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 10,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    maxWidth: '80%',
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
   },
+  emergencyText: { color: '#fff', fontWeight: 'bold', fontSize: 13, textAlign: 'center' },
+
+  chatList: { flex: 1, marginBottom: 10 },
+
   userMsg: {
     alignSelf: 'flex-end',
     backgroundColor: '#d1e7dd',
+    padding: 10,
+    marginVertical: 5,
+    borderRadius: 10,
+    maxWidth: '80%',
   },
   botMsg: {
     alignSelf: 'flex-start',
     backgroundColor: '#f8d7da',
+    padding: 10,
+    marginVertical: 5,
+    borderRadius: 10,
+    maxWidth: '80%',
   },
   msgText: { fontSize: 16 },
+
+  inputWrapper: {
+    width: '100%',
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: '#fff',
   },
   input: {
     flex: 1,
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 40,
     marginRight: 10,
   },
   sendButton: {
-    backgroundColor: '#0d6efd',
-    borderRadius: 25,
-    padding: 10,
+    backgroundColor: '#90caf9', // tono más claro
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  bottomBorder: {
+    borderTopWidth: 50,
+    borderTopColor: '#e9f5f9',
+    width: '100%',
   },
 });
