@@ -1,0 +1,70 @@
+En este documento se muestra el inicio del proyecto y su ejecución para que funcione como motor base de ia
+////Windows////
+
+----Instalaciones usadas_v1----
+pip install chatterbot
+pip install chatterbot_corpus
+pip install torch torchvision torchaudio
+pip install tensorflow
+pip install numpy pandas scikit-learn nltk
+pip install joblib
+pip install flask
+
+
+---Verificación de datos extraidos----
+Verifica la tabla de la estructura final donde tienes que tener los archivos marcados con "#"
+En el que debes tener en su mayoría todo para poder ejecurtarlo (Menos la carpeta de models ya que esa se crea ejecutando los archivos py)
+
+
+----Ejecuciones de creación----
+
+python -m venv auxi
+
+venv\Scripts\activate
+source venv/bin/activate
+
+
+----Pasos a ejecutar ----
+1.- python src/train.py = Entrenara los modelos mostrando el rango de error.
+
+	Modelos:
+		models/general_state.pth
+		models/general_vect.pkl
+		models/general_labels.pkl
+		models/emergency_state.pth
+		models/emergency_vect.pkl
+		models/emergency_labels.pkl
+
+2.- Ejecutar EL MAIN para verificar que el modelo esta presente
+python main.py
+
+
+3.- Por ultimo ejecutar el api que hará levantamiento permitiendo conectar con la api en nestj
+python src/api.py
+
+
+
+Estructura final
+AuxiIA/
+│
+├─ auxi/
+│   ├─ data/
+│   │   ├─ traning_data #Datos base de entrenamiento
+|   |                     
+|   |--Model/
+|   |	 |------models/general_state.pth
+|   |	 |------models/general_vect.pkl
+|   |	 |------models/general_labels.pkl
+|   |	 |------models/emergency_state.pth
+|   |	 |------models/emergency_vect.pkl
+|   |	 |------models/emergency_labels.pkl
+|   |
+|   |
+│   ├─ src/
+│   │   ├─ chatbot.py			# 	estructura base
+│   │   ├─ model.py			# 	modelo usado y la creación de la carpeta
+│   │   └─ train.py			#	entrenamiento
+│   │   └─ api.py				#	Levantamiento
+│   └─ main.py              # 	para pruebas locales
+│
+
