@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.77.76:3000/chat'; // Cambia TU_IP por la IP de tu PC si pruebas en dispositivo físico
+const API_URL = 'http://192.168.164.130:3000/chat'; // Cambia TU_IP por la IP de tu PC si pruebas en dispositivo físico
 
 // Enviar mensaje al chatbot y recibir respuesta
 export const sendMessage = async (message: string): Promise<string> => {

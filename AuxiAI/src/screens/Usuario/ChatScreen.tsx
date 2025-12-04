@@ -1,23 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   FlatList,
   StyleSheet,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
-} from 'react-native';
-import { sendMessage } from '../../servicios/chatService';
-import { guardarHistorial } from '../../servicios/historialService';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Speech from "expo-speech";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { sendMessage } from "../../servicios/chatService";
+import { guardarHistorial } from "../../servicios/historialService";
 
 type Message = {
   id: string;
   text: string;
-  from: 'user' | 'bot';
+  from: "user" | "bot";
 };
 
 const emergencyOptions = [
@@ -30,31 +31,68 @@ const emergencyOptions = [
 ];
 
 const severityColors: Record<string, string> = {
-  leve: "#28a745",
-  moderado: "#ffc107",
-  grave: "#dc3545",
+  leve: "#4CAF50",
+  moderado: "#FFC107",
+  grave: "#E91E63",
 };
 
 export const ChatScreen = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
+  const [showEmergencias, setShowEmergencias] = useState(true);
+
+  const flatListRef = useRef<FlatList>(null);
+
+  // AUTO SCROLL
+  useEffect(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
+
+  const speakMessage = async (text: string) => {
+    try {
+      const savedSpeed = await AsyncStorage.getItem("voiceSpeed");
+      const savedVoice = await AsyncStorage.getItem("voiceId");
+
+      const rate = savedSpeed ? parseFloat(savedSpeed) : 1.0;
+      const voice = savedVoice || undefined;
+
+      Speech.stop();
+      Speech.speak(text, {
+        rate,
+        voice,
+        language: "es-MX",
+      });
+    } catch (error) {
+      console.log("Error cargando configuración de voz:", error);
+      Speech.speak(text, { rate: 1.0, language: "es-MX" });
+    }
+  };  
 
   const handleSend = async (text?: string, gravedad?: string) => {
     const userInput = text || input;
     if (!userInput) return;
 
-    await guardarHistorial(userInput, 'user', gravedad);
+    await guardarHistorial(userInput, "user", gravedad);
 
-    const userMsg: Message = { id: Date.now().toString(), text: userInput, from: 'user' };
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      text: userInput,
+      from: "user",
+    };
     setMessages((prev) => [...prev, userMsg]);
 
     const response = await sendMessage(userInput);
-    const botMsg: Message = { id: (Date.now() + 1).toString(), text: response, from: 'bot' };
+    const botMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      text: response,
+      from: "bot",
+    };
     setMessages((prev) => [...prev, botMsg]);
 
-    await guardarHistorial(response, 'bot');
+    await guardarHistorial(response, "bot");
+    speakMessage(response);
 
-    setInput('');
+    setInput("");
   };
 
   const rows: typeof emergencyOptions[][] = [];
@@ -63,130 +101,203 @@ export const ChatScreen = () => {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 20}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        {/* 🔹 Grid de botones de emergencia */}
-        <View style={styles.gridContainer}>
-          {rows.map((row, rowIndex) => (
-            <View key={rowIndex} style={styles.row}>
-              {row.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[styles.emergencyButton, { backgroundColor: severityColors[option.severity] }]}
-                  onPress={() => handleSend(option.value, option.severity)}
-                >
-                  <Text style={styles.emergencyText}>{option.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ))}
-        </View>
-
-        {/* 🔹 Lista de mensajes */}
+    <LinearGradient colors={["#00b4d8", "#0077b6"]} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        // 🚨 Ajuste Clave: Usar 'height' en Android o no especificar, y 'padding' en iOS.
+        behavior={Platform.OS === "ios" ? "padding" : "height"} 
+        style={styles.keyboardView}
+        // Ajuste fino prara la altura del teclado en iOS si es necesario.
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0} 
+      >
         <FlatList
+          ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id}
+          style={styles.flatList} // Asegura que el FlatList use flex: 1
+          contentContainerStyle={{ paddingHorizontal: 10 }}
           renderItem={({ item }) => (
-            <View style={item.from === 'user' ? styles.userMsg : styles.botMsg}>
+            <View style={item.from === "user" ? styles.userMsg : styles.botMsg}>
               <Text style={styles.msgText}>{item.text}</Text>
             </View>
           )}
-          style={styles.chatList}
+          ListHeaderComponent={
+            <>
+              <View style={styles.topBorder} />
+              <TouchableOpacity
+                style={styles.toggleButton}
+                onPress={() => setShowEmergencias(!showEmergencias)}
+              >
+                <Text style={styles.toggleButtonText}>
+                  {showEmergencias ? "Ocultar emergencias ▲" : "Mostrar emergencias ▼"}
+                </Text>
+              </TouchableOpacity>
+
+              {showEmergencias && (
+                <View style={styles.gridContainer}>
+                  {rows.map((row, rowIndex) => (
+                    <View key={rowIndex} style={styles.row}>
+                      {row.map((option) => (
+                        <TouchableOpacity
+                          key={option.value}
+                          style={[
+                            styles.emergencyButton,
+                            { backgroundColor: severityColors[option.severity] },
+                          ]}
+                          onPress={() => handleSend(option.value, option.severity)}
+                        >
+                          <Text style={styles.emergencyText}>{option.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          }
         />
 
-        {/* 🔹 Input y botón */}
+        {/* BARRA DE MENSAJE: Es el último elemento en el KAV */}
         <View style={styles.inputWrapper}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={input}
-              onChangeText={setInput}
-              placeholder="Escribe tu mensaje..."
-            />
-            <TouchableOpacity style={styles.sendButton} onPress={() => handleSend()}>
-              <Text style={styles.sendButtonText}>Enviar</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* 🔹 Borde/espacio debajo del input */}
-          <View style={styles.bottomBorder} />
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Escribe tu mensaje..."
+            placeholderTextColor="#00000088"
+          />
+          <TouchableOpacity style={styles.sendButton} onPress={() => handleSend()}>
+            <Text style={styles.sendButtonText}>Enviar</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  keyboardView: {
+    flex: 1,
+    // Asegurarse de que el KAV también use flex: 1
+  },
+  flatList: {
+    flex: 1,
+    // Asegura que el FlatList crezca y empuje el input hacia abajo.
+  },
+  topBorder: {
+    borderTopWidth: 30,
+    borderTopColor: "#03045e27",
+    marginBottom: 20,
+    width: "100%",
+  },
 
-  gridContainer: { marginTop: 50, marginBottom: 10 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  toggleButton: {
+    alignSelf: "center",
+    backgroundColor: "#ffffff44",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginBottom: 10,
+  },
+  toggleButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+
+  gridContainer: {
+    marginBottom: 10,
+    paddingHorizontal: 5,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
   emergencyButton: {
     flex: 1,
     marginHorizontal: 4,
-    paddingVertical: 10,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
   },
-  emergencyText: { color: '#fff', fontWeight: 'bold', fontSize: 13, textAlign: 'center' },
-
-  chatList: { flex: 1, marginBottom: 10 },
+  emergencyText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+    textAlign: "center",
+  },
 
   userMsg: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#d1e7dd',
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 10,
-    maxWidth: '80%',
+    alignSelf: "flex-end",
+    backgroundColor: "#fff",
+    padding: 12,
+    marginVertical: 6,
+    borderTopLeftRadius: 15,
+    borderBottomLeftRadius: 15,
+    borderTopRightRadius: 5,
+    borderBottomRightRadius: 15,
+    maxWidth: "80%",
+    elevation: 2,
   },
   botMsg: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#f8d7da',
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 10,
-    maxWidth: '80%',
+    alignSelf: "flex-start",
+    backgroundColor: "#ffffff55",
+    padding: 12,
+    marginVertical: 6,
+    borderTopLeftRadius: 5,
+    borderBottomLeftRadius: 15,
+    borderTopRightRadius: 15,
+    borderBottomRightRadius: 15,
+    maxWidth: "80%",
+    borderWidth: 1,
+    borderColor: "#ffffff66",
+    elevation: 2,
   },
-  msgText: { fontSize: 16 },
+  msgText: {
+    fontSize: 16,
+    color: "#03045e",
+  },
 
+  // ⭐ BARRA DE INPUT
   inputWrapper: {
-    width: '100%',
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#ffffff",
+    borderTopWidth: 1,
+    borderColor: "#ccc",
+    elevation: 10,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: '#fff',
-  },
+
   input: {
     flex: 1,
-    borderColor: '#ccc',
+    backgroundColor: "#fff",
+    borderColor: "#00b4d8",
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    height: 40,
-    marginRight: 10,
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    height: 48,
+    color: "#03045e",
+    fontSize: 16,
+    elevation: 2,
   },
   sendButton: {
-    backgroundColor: '#90caf9', // tono más claro
-    paddingHorizontal: 15,
+    backgroundColor: "#00b4d8",
+    paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 20,
+    height: 48,
+    justifyContent: "center",
+    marginLeft: 8,
+    elevation: 5,
   },
   sendButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  bottomBorder: {
-    borderTopWidth: 50,
-    borderTopColor: '#e9f5f9',
-    width: '100%',
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
+
+export default ChatScreen;

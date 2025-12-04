@@ -1,15 +1,33 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, KeyboardAvoidingView, Platform,
-  ImageBackground
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Dimensions,
+  Image,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import api from '../servicios/api';
 
+const { width, height } = Dimensions.get('window');
+
 export default function LoginScreen({ navigation }: any) {
-  const [correo, setCorreo] = useState('');
-  const [password, setPassword] = useState('');
+  const bubbles = Array.from({ length: 8 }, () => ({
+    x: Math.random() * width,
+    size: Math.random() * 30 + 20,
+    animation: new Animated.Value(height),
+    opacity: Math.random() * 0.5 + 0.3,
+  }));
+
+  const [correo, setCorreo] = React.useState('');
+  const [password, setPassword] = React.useState('');
 
   const handleLogin = async () => {
     if (!correo || !password) {
@@ -19,14 +37,9 @@ export default function LoginScreen({ navigation }: any) {
 
     try {
       const response = await api.post('/auth/login', { correo, password });
-
-      // Limpiar token viejo y guardar el nuevo
       await AsyncStorage.removeItem('token');
       await AsyncStorage.setItem('token', response.data.token);
-
       Alert.alert('Éxito', 'Login exitoso');
-
-      // Navegar a Home garantizando que el token esté guardado
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],
@@ -37,10 +50,51 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
+const animateBubbles = () => {
+  bubbles.forEach((bubble) => {
+    bubble.animation.setValue(height);
+    Animated.loop(
+      Animated.timing(bubble.animation, {
+        toValue: -bubble.size,
+        duration: 3000, // 3 segundos de ritmo constante
+        useNativeDriver: true,
+      })
+    ).start();
+  });
+};
+
+
+  useEffect(() => {
+    animateBubbles();
+  }, []);
+
   return (
-    <ImageBackground source={require('../../assets/AuxiFondo.png')} style={styles.background}>
+    <LinearGradient colors={['#00CED1', '#FFF8DC']} style={styles.background}>
+      <View style={styles.bubbleContainer}>
+        {bubbles.map((bubble, index) => (
+          <Animated.View
+            key={index}
+            style={[
+              styles.bubble,
+              {
+                left: bubble.x,
+                width: bubble.size,
+                height: bubble.size,
+                opacity: bubble.opacity,
+                transform: [{ translateY: bubble.animation }],
+              },
+            ]}
+          />
+        ))}
+      </View>
+
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
         <View style={styles.card}>
+          <Image
+            source={require('../../assets/Fondos/new/Newlog.png')}
+            style={styles.logo}
+          />
+
           <Text style={styles.title}>Bienvenido a AuxiAI</Text>
 
           <TextInput
@@ -67,17 +121,75 @@ export default function LoginScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </ImageBackground>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  background: { flex: 1, resizeMode: 'cover', justifyContent: 'center' },
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  card: { backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 16, padding: 25, elevation: 5 },
-  title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, color: '#0d6efd' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 12, marginBottom: 15, fontSize: 16, backgroundColor: '#fff' },
-  button: { backgroundColor: '#0d6efd', borderRadius: 10, paddingVertical: 12, marginBottom: 10 },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center' },
-  link: { marginTop: 10, textAlign: 'center', color: '#0d6efd', fontWeight: '500' },
+  background: {
+    flex: 1,
+  },
+  bubbleContainer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  bubble: {
+    position: 'absolute',
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Transparente
+    borderRadius: 16,
+    padding: 25,
+    alignItems: 'center',
+    width: '90%',
+    alignSelf: 'center',
+  },
+  logo: {
+    width: 90,
+    height: 90,
+    marginBottom: 10,
+    borderRadius: 45,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#004D4D',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    width: '100%',
+  },
+  button: {
+    backgroundColor: '#00CED1',
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginBottom: 10,
+    width: '100%',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  link: {
+    marginTop: 10,
+    textAlign: 'center',
+    color: '#004D4D',
+    fontWeight: '500',
+  },
 });

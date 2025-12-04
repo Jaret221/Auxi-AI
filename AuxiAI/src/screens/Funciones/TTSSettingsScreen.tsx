@@ -1,288 +1,361 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ActivityIndicator, 
-  ImageBackground,
-  TouchableOpacity 
-} from 'react-native';
-import Slider from '@react-native-community/slider';
-import { Picker } from '@react-native-picker/picker';
-import * as Speech from 'expo-speech';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import * as Speech from "expo-speech";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Asegúrate de tener esta imagen en tus assets o usa una URL
-const BACKGROUND_IMAGE = require('../../../assets/Fondos/setings.png'); 
+export default function VoiceSettingsScreen({ navigation }: any) {
+  const [selectedSpeed, setSelectedSpeed] = useState(1.0);
+  const [voices, setVoices] = useState<any[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [loadingVoices, setLoadingVoices] = useState(true);
 
-const VoiceSettings = ({ navigation }) => {
-  const [rate, setRate] = useState(0.8);
-  const [voice, setVoice] = useState(null);
-  const [voices, setVoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  // ... (resto del código de useEffect y funciones permanece igual) ...
   useEffect(() => {
-    const loadVoicesAndSettings = async () => {
+    const loadVoices = async () => {
       try {
-        // Cargar configuración guardada
-        const savedSettings = await AsyncStorage.getItem('voiceSettings');
-        if (savedSettings) {
-          const { rate: savedRate, voice: savedVoice } = JSON.parse(savedSettings);
-          setRate(savedRate);
-          
-          // Cargar voces disponibles
-          const availableVoices = await Speech.getAvailableVoicesAsync();
-          const spanishVoices = availableVoices.filter(v => v.language.includes('es'));
-          setVoices(spanishVoices);
-          
-          // Establecer voz guardada si existe
-          if (savedVoice) {
-            const foundVoice = spanishVoices.find(v => v.identifier === savedVoice);
-            setVoice(foundVoice || spanishVoices[0]);
-          } else {
-            setVoice(spanishVoices[0]);
-          }
-        } else {
-          // Cargar solo voces si no hay configuración guardada
-          const availableVoices = await Speech.getAvailableVoicesAsync();
-          const spanishVoices = availableVoices.filter(v => v.language.includes('es'));
-          setVoices(spanishVoices);
-          setVoice(spanishVoices[0]);
-        }
-      } catch (error) {
-        console.error('Error loading voices:', error);
+        const availableVoices = await Speech.getAvailableVoicesAsync();
+        const filtered = availableVoices.filter((v) =>
+          v.language.startsWith("es")
+        );
+        setVoices(filtered);
+
+        const savedSpeed = await AsyncStorage.getItem("voiceSpeed");
+        const savedVoice = await AsyncStorage.getItem("voiceId");
+        if (savedSpeed) setSelectedSpeed(parseFloat(savedSpeed));
+        if (savedVoice) setSelectedVoice(savedVoice);
+      } catch (err) {
+        console.log("Error cargando voces:", err);
       } finally {
-        setLoading(false);
+        setLoadingVoices(false);
       }
     };
-    
-    loadVoicesAndSettings();
+    loadVoices();
   }, []);
 
-  const testSettings = () => {
-    if (!voice) return;
-    
-    Speech.speak('Esta es una prueba de la configuración de voz actual', {
-      voice: voice.identifier,
-      rate: rate,
-      language: 'es'
+  const handleVoiceTest = () => {
+    if (!selectedVoice) {
+      Alert.alert("Selecciona una voz primero");
+      return;
+    }
+
+    setIsSpeaking(true);
+
+    const message = "Hola, soy tu asistente de AuxiIA. Esta es una prueba de voz.";
+
+    Speech.speak(message, {
+      rate: selectedSpeed,
+      voice: selectedVoice,
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
     });
   };
 
+  const stopVoice = () => {
+    Speech.stop();
+    setIsSpeaking(false);
+  };
+
   const saveSettings = async () => {
-    setSaving(true);
     try {
-      await AsyncStorage.setItem('voiceSettings', JSON.stringify({
-        rate,
-        voice: voice?.identifier
-      }));
-      
-      navigation.navigate('ProtocolSearch', { 
-        voiceSettings: {
-          rate,
-          voice: voice?.identifier
-        }
-      });
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    } finally {
-      setSaving(false);
+      await AsyncStorage.setItem("voiceSpeed", selectedSpeed.toString());
+      if (selectedVoice) await AsyncStorage.setItem("voiceId", selectedVoice);
+
+      Alert.alert(
+        "✅ Configuración guardada",
+        "Los cambios se aplicarán al chat."
+      );
+    } catch (err) {
+      Alert.alert("Error", "No se pudo guardar la configuración.");
     }
   };
 
-  if (loading) {
-    return (
-      <ImageBackground source={BACKGROUND_IMAGE} style={styles.backgroundImage}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
-          <Text style={styles.loadingText}>Cargando voces disponibles...</Text>
-        </View>
-      </ImageBackground>
-    );
-  }
-
   return (
-    <ImageBackground source={BACKGROUND_IMAGE} style={styles.backgroundImage}>
-      <View style={styles.overlay}>
-        <Text style={styles.title}>Configuración de Voz</Text>
-        
-        <View style={styles.settingContainer}>
-          <Text style={styles.label}>Velocidad: {rate.toFixed(1)}</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0.5}
-            maximumValue={1.5}
-            step={0.1}
-            value={rate}
-            onValueChange={setRate}
-            minimumTrackTintColor="#FF6B6B"
-            maximumTrackTintColor="#FFFFFF"
-            thumbTintColor="#FF6B6B"
-          />
+    <LinearGradient
+      colors={["#0a0f24", "#071930", "#02101f"]}
+      style={styles.container}
+    >
+      <View style={styles.card}>
+        <Text style={styles.title}>
+          <Ionicons name="volume-high-outline" size={24} color="#00E0FF" />{" "}
+          Configuración de Voz
+        </Text>
+
+        {/* VELOCIDAD */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            <Ionicons name="speedometer-outline" size={18} color="#00E0FF" />{" "}
+            Velocidad:{" "}
+            <Text style={{ color: "#00E0FF" }}>
+              {selectedSpeed.toFixed(1)}x
+            </Text>
+          </Text>
+
+          <View style={styles.speedOptions}>
+            {[0.8, 1.0, 1.2, 1.4].map((speed) => (
+              <TouchableOpacity
+                key={speed}
+                style={[
+                  styles.speedButton,
+                  selectedSpeed === speed && styles.speedButtonActive,
+                ]}
+                onPress={() => setSelectedSpeed(speed)}
+              >
+                <Text
+                  style={[
+                    styles.speedText,
+                    selectedSpeed === speed && styles.speedTextActive,
+                  ]}
+                >
+                  {speed}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-        
-        <View style={styles.settingContainer}>
-          <Text style={styles.label}>Tipo de Voz:</Text>
-          {voices.length > 0 ? (
-            <Picker
-              selectedValue={voice?.identifier}
-              style={styles.picker}
-              onValueChange={(itemValue) => {
-                const selected = voices.find(v => v.identifier === itemValue);
-                setVoice(selected);
-              }}
-            >
-              {voices.map(v => (
-                <Picker.Item 
-                  key={v.identifier} 
-                  label={`${v.name || 'Voz predeterminada'} (${v.language})`} 
-                  value={v.identifier} 
-                />
-              ))}
-            </Picker>
+
+        {/* VOCES */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            <Ionicons name="mic-outline" size={18} color="#00E0FF" /> Seleccionar
+            Voz
+          </Text>
+
+          {loadingVoices ? (
+            <ActivityIndicator color="#00E0FF" />
           ) : (
-            <Text style={styles.errorText}>No se encontraron voces en español</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ paddingVertical: 5 }}
+            >
+              {voices.map((voice, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.voiceCard,
+                    selectedVoice === voice.identifier &&
+                      styles.voiceCardActive,
+                  ]}
+                  onPress={() => setSelectedVoice(voice.identifier)}
+                >
+                  <Text
+                    style={[
+                      styles.voiceName,
+                      selectedVoice === voice.identifier &&
+                        styles.voiceNameActive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {voice.name || "Voz desconocida"}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.voiceCode,
+                      selectedVoice === voice.identifier &&
+                        styles.voiceCodeActive,
+                    ]}
+                  >
+                    {voice.language}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           )}
         </View>
-        
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.button, 
-              styles.saveButton,
-              (saving || !voice) && styles.disabledButton
-            ]}
-            onPress={saveSettings}
-            disabled={saving || !voice}
-          >
-            <Text style={styles.buttonText}>
-              {saving ? "Guardando..." : "Guardar"}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.button, 
-              styles.testButton,
-              !voice && styles.disabledButton
-            ]}
-            onPress={testSettings}
-            disabled={!voice}
-          >
-            <Text style={styles.buttonText}>Probar Voz</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.button, styles.backButton]}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.buttonText}>Volver</Text>
-          </TouchableOpacity>
-        </View>
+
+        {/* BOTÓN DE PRUEBA */}
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={isSpeaking ? stopVoice : handleVoiceTest}
+        >
+          <Ionicons
+            name={
+              isSpeaking
+                ? "pause-circle-outline"
+                : "play-circle-outline"
+            }
+            size={24}
+            color="#00E0FF"
+          />
+          <Text style={styles.testButtonText}>
+            {isSpeaking ? "Pausar voz" : "Probar voz"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* GUARDAR */}
+        <TouchableOpacity style={styles.saveButton} onPress={saveSettings}>
+          <Ionicons name="lock-closed-outline" size={18} color="#fff" />
+          <Text style={styles.saveButtonText}>Guardar</Text>
+        </TouchableOpacity>
+
+        {/* VOLVER */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={18} color="#00E0FF" />
+          <Text style={styles.backText}>Volver</Text>
+        </TouchableOpacity>
       </View>
-    </ImageBackground>
+    </LinearGradient>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  backgroundImage: {
-    flex: 1,
-    resizeMode: 'cover',
-    justifyContent: 'center',
+  container: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+  card: {
+    backgroundColor: "rgba(10, 20, 40, 0.95)",
+    borderRadius: 20,
+    padding: 25,
+    width: "85%",
+    shadowColor: "#00E0FF",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 20,
-    justifyContent: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
+
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
+    color: "#00E0FF",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
   },
-  settingContainer: {
-    marginBottom: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+
+  section: {
+    marginBottom: 20,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 15,
     padding: 15,
-    borderRadius: 10,
-    elevation: 5,
   },
-  label: {
-    fontSize: 16,
+
+  sectionTitle: {
+    color: "#00E0FF",
+    fontWeight: "bold",
     marginBottom: 10,
-    color: '#333333',
-    fontWeight: '600',
+    textAlign: "center",
   },
-  slider: {
-    width: '100%',
-    height: 40,
+
+  speedOptions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
-  picker: {
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+
+  speedButton: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
   },
-  buttonsContainer: {
-    marginTop: 20,
-    alignItems: 'center',
+
+  speedButtonActive: {
+    backgroundColor: "#00E0FF",
   },
-  button: {
-    width: '80%',
-    paddingVertical: 15,
-    borderRadius: 25,
-    marginBottom: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    elevation: 5,
+
+  speedText: {
+    color: "#fff",
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+
+  speedTextActive: {
+    color: "#000",
+    fontWeight: "700",
   },
-  saveButton: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#2E7D32',
+
+  voiceCard: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    padding: 10,
+    marginRight: 12,
+    alignItems: "center",
+    width: 140,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
+
+  voiceCardActive: {
+    backgroundColor: "#00E0FF",
+    borderColor: "#00E0FF",
+  },
+
+  voiceName: {
+    color: "#fff",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  voiceNameActive: {
+    color: "#000",
+  },
+
+  voiceCode: {
+    color: "#00E0FF",
+    fontSize: 12,
+  },
+
+  voiceCodeActive: {
+    color: "#000",
+  },
+
   testButton: {
-    backgroundColor: '#2196F3',
-    borderColor: '#0D47A1',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#00E0FF",
+    borderRadius: 30,
+    paddingVertical: 12,
+    marginBottom: 10,
   },
+
+  testButtonText: {
+    color: "#00E0FF",
+    fontWeight: "bold",
+    marginLeft: 8,
+    fontSize: 16,
+    textAlign: "center",
+  },
+
+  saveButton: {
+    flexDirection: "row",
+    backgroundColor: "#00C853",
+    borderRadius: 30,
+    paddingVertical: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    marginLeft: 8,
+    fontSize: 16,
+  },
+
   backButton: {
-    backgroundColor: '#FF5722',
-    borderColor: '#E64A19',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderRadius: 30,
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
-  disabledButton: {
-    backgroundColor: '#9E9E9E',
-    borderColor: '#616161',
-  },
-  errorText: {
-    color: '#FF5252',
-    textAlign: 'center',
-    paddingVertical: 10,
-    fontWeight: 'bold',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 5,
+
+  backText: {
+    color: "#00E0FF",
+    marginLeft: 8,
+    fontWeight: "bold",
   },
 });
-
-export default VoiceSettings;

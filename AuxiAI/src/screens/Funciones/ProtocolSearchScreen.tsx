@@ -8,17 +8,21 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  ImageBackground,
+  // ImageBackground, // Eliminado para usar LinearGradient
   Animated,
-  Easing
+  Easing,
+  SafeAreaView // Añadido para un layout correcto
 } from 'react-native';
 import * as Speech from 'expo-speech';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppThemeProtocolo, Colorsth } from '../../styles/AppThemeProtocol';
+import { LinearGradient } from 'expo-linear-gradient'; // Importado para el fondo
+// Se asume que AppThemeProtocolo y Colorsth están definidos en sus respectivas rutas
+import { AppThemeProtocolo } from '../../styles/AppThemeProtocol';
+import { Colorsth } from '../../styles/Colors';
+// const BACKGROUND_IMAGE = require('../../../assets/Fondos/protocol.png'); // Eliminado
 
-const BACKGROUND_IMAGE = require('../../../assets/Fondos/protocol.png');
-
+// --- TIPADO ---
 type FirstAidProtocol = {
   keywords: string[];
   title: string;
@@ -30,6 +34,7 @@ type FirstAidProtocol = {
 
 type PlaybackStatus = 'idle' | 'playing' | 'paused' | 'loading';
 
+// --- COMPONENTE PRINCIPAL ---
 const ProtocolSearchScreen = ({ route }) => {
   const navigation = useNavigation();
   const [searchText, setSearchText] = useState('');
@@ -45,13 +50,13 @@ const ProtocolSearchScreen = ({ route }) => {
   const buttonScale = new Animated.Value(1);
   const buttonOpacity = new Animated.Value(1);
 
-  // ... (tus protocolos permanecen igual) ...
+  // --- PROTOCOLOS DE PRIMEROS AUXILIOS ---
   const firstAidProtocols: FirstAidProtocol[] = [
     {
       keywords: ['quemadura', 'quemado', 'fuego', 'calor', 'quemó', 'ampolla', 'agua hirviendo', 'grasas calientes', 'piel roja', 'piel ampollada', 'quemadura tercer grado'],
       title: 'Quemaduras',
       severity: 'moderada',
-      color: '#FFA726',
+      color: Colorsth.warning,
       immediateActions: [
         'Enfriar la zona con agua a temperatura ambiente durante 10-15 minutos',
         'No usar hielo directamente ni cremas caseras',
@@ -68,7 +73,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['herida', 'corte', 'sangrado', 'hemorragia', 'raspón', 'punzadura', 'sangrado leve', 'sangrado abundante', 'chorro de sangre'],
       title: 'Heridas y Sangrado',
       severity: 'moderada',
-      color: '#FFA726',
+      color: Colorsth.warning,
       immediateActions: [
         'Aplicar presión con gasa o paño limpio',
         'Elevar la extremidad afectada',
@@ -85,7 +90,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['insolación', 'golpe de calor', 'deshidratación', 'temperatura alta', 'exposición solar', 'mareo por calor', 'agotamiento por calor'],
       title: 'Insolación/Golpe de Calor',
       severity: 'grave',
-      color: '#ec5252',
+      color: Colorsth.danger,
       immediateActions: [
         'Mover a la persona a un lugar fresco y sombreado',
         'Aplicar paños húmedos fríos en cuello, axilas e ingle',
@@ -103,7 +108,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['fractura', 'hueso roto', 'quebradura', 'fisura ósea', 'fractura abierta', 'fractura cerrada', 'dolor intenso', 'deformidad', 'hinchazón'],
       title: 'Fracturas Óseas',
       severity: 'grave',
-      color: '#ec5252',
+      color: Colorsth.danger,
       immediateActions: [
         'Inmovilizar la zona afectada sin intentar enderezar el hueso',
         'Aplicar compresas frías para reducir hinchazón (no directamente sobre la piel)',
@@ -121,7 +126,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['ahogamiento', 'asfixia', 'atragantamiento', 'obstrucción vía aérea', 'no puede respirar', 'tos débil', 'incapacidad para hablar', 'labios azules'],
       title: 'Atragantamiento/Asfixia',
       severity: 'grave',
-      color: '#ec5252',
+      color: Colorsth.danger,
       immediateActions: [
         'Si la persona tose con fuerza: animar a seguir tosiendo',
         'Si no puede toser, hablar o respirar: aplicar maniobra de Heimlich',
@@ -129,9 +134,9 @@ const ProtocolSearchScreen = ({ route }) => {
       ],
       steps: [
         '1. Para adultos/niños conscientes:',
-        '   - Colocarse detrás y rodear su cintura',
-        '   - Hacer puño con una mano y colocarlo sobre el abdomen (entre ombligo y esternón)',
-        '   - Agarrar el puño con la otra mano y realizar compresiones rápidas hacia arriba y adentro',
+        '   - Colocarse detrás y rodear su cintura',
+        '   - Hacer puño con una mano y colocarlo sobre el abdomen (entre ombligo y esternón)',
+        '   - Agarrar el puño con la otra mano y realizar compresiones rápidas hacia arriba y adentro',
         '2. Si la persona pierde el conocimiento: comenzar RCP',
         '3. En embarazadas/obesos: realizar compresiones torácicas en lugar de abdominales',
         '4. Buscar atención médica incluso si se resuelve el atragantamiento',
@@ -141,7 +146,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['reacción alérgica', 'alergia', 'anafilaxia', 'picadura', 'alergeno', 'hinchazón cara', 'dificultad respiratoria', 'urticaria', 'picazón'],
       title: 'Reacción Alérgica Grave',
       severity: 'grave',
-      color: '#ec5252',
+      color: Colorsth.danger,
       immediateActions: [
         'Identificar y retirar el alérgeno si es posible (ej. aguijón)',
         'Administrar autoinyector de epinefrina (EpiPen) si está disponible',
@@ -161,7 +166,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['convulsión', 'epilepsia', 'ataque', 'temblores', 'pérdida de conciencia', 'movimientos involuntarios', 'espasmos'],
       title: 'Convulsiones',
       severity: 'moderada',
-      color: '#FFA726',
+      color: Colorsth.warning,
       immediateActions: [
         'Proteger la cabeza con algo suave',
         'Retirar objetos peligrosos del alrededor',
@@ -173,21 +178,21 @@ const ProtocolSearchScreen = ({ route }) => {
         '2. Aflojar ropa apretada, especialmente alrededor del cuello',
         '3. Esperar a que termine la convulsión naturalmente',
         '4. Después de la convulsión:',
-        '   - Mantener vía aérea despejada',
-        '   - No dar alimentos/líquidos hasta estar completamente alerta',
-        '   - Proporcionar un lugar tranquilo para recuperarse',
+        '   - Mantener vía aérea despejada',
+        '   - No dar alimentos/líquidos hasta estar completamente alerta',
+        '   - Proporcionar un lugar tranquilo para recuperarse',
         '5. Buscar ayuda médica si:',
-        '   - Es la primera convulsión',
-        '   - Dura más de 5 minutos',
-        '   - Ocurre en el agua',
-        '   - La persona está embarazada o tiene diabetes',
+        '   - Es la primera convulsión',
+        '   - Dura más de 5 minutos',
+        '   - Ocurre en el agua',
+        '   - La persona está embarazada o tiene diabetes',
       ],
     },
     {
       keywords: ['desmayo', 'síncope', 'pérdida de conciencia', 'mareo', 'palidez', 'sudor frío', 'vista nublada'],
       title: 'Desmayos',
       severity: 'leve',
-      color: '#66BB6A',
+      color: Colorsth.success,
       immediateActions: [
         'Colocar a la persona boca arriba y elevar las piernas 30-45 cm',
         'Aflojar ropa apretada',
@@ -197,21 +202,21 @@ const ProtocolSearchScreen = ({ route }) => {
         '1. Verificar respiración y pulso',
         '2. Si no respira: iniciar RCP y llamar a emergencias',
         '3. Si respira:',
-        '   - Mantener posición con piernas elevadas',
-        '   - No ofrecer alimentos/líquidos hasta recuperación completa',
-        '   - Cuando despierte, hacerlo sentarse lentamente',
+        '   - Mantener posición con piernas elevadas',
+        '   - No ofrecer alimentos/líquidos hasta recuperación completa',
+        '   - Cuando despierte, hacerlo sentarse lentamente',
         '4. Investigar posibles causas (ayuno prolongado, calor excesivo, etc.)',
         '5. Buscar atención médica si:',
-        '   - No recupera conciencia en 1-2 minutos',
-        '   - Presenta convulsiones',
-        '   - Tiene dolor en el pecho o dificultad para hablar',
+        '   - No recupera conciencia en 1-2 minutos',
+        '   - Presenta convulsiones',
+        '   - Tiene dolor en el pecho o dificultad para hablar',
       ],
     },
     {
       keywords: ['intoxicación', 'veneno', 'sobredosis', 'medicamentos', 'productos químicos', 'ingestión tóxica', 'inhalación tóxica'],
       title: 'Intoxicaciones',
       severity: 'grave',
-      color: '#ec5252',
+      color: Colorsth.danger,
       immediateActions: [
         'Identificar el tóxico (guardar envase/restos)',
         'Llamar a centro de toxicología inmediatamente',
@@ -219,16 +224,16 @@ const ProtocolSearchScreen = ({ route }) => {
       ],
       steps: [
         '1. Para intoxicación por ingestión:',
-        '   - No dar leche ni aceite (pueden empeorar absorción)',
-        '   - Para sustancias corrosivas: enjuagar boca con agua',
+        '   - No dar leche ni aceite (pueden empeorar absorción)',
+        '   - Para sustancias corrosivas: enjuagar boca con agua',
         '2. Para intoxicación por inhalación:',
-        '   - Llevar a la persona a aire fresco',
-        '   - Asegurar vías respiratorias',
+        '   - Llevar a la persona a aire fresco',
+        '   - Asegurar vías respiratorias',
         '3. Para intoxicación cutánea:',
-        '   - Quitar ropa contaminada',
-        '   - Lavar con agua corriente durante 15-20 minutos',
+        '   - Quitar ropa contaminada',
+        '   - Lavar con agua corriente durante 15-20 minutos',
         '4. Para intoxicación ocular:',
-        '   - Lavar ojo con agua corriente (de nariz hacia afuera) durante 15 minutos',
+        '   - Lavar ojo con agua corriente (de nariz hacia afuera) durante 15 minutos',
         '5. Trasladar urgentemente a centro médico con información del tóxico',
       ],
     },
@@ -236,7 +241,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['picadura', 'mordedura', 'abeja', 'avispa', 'araña', 'serpiente', 'alacrán', 'escorpión', 'medusa'],
       title: 'Picaduras y Mordeduras',
       severity: 'moderada',
-      color: '#FFA726',
+      color: Colorsth.warning,
       immediateActions: [
         'Lavar zona con agua y jabón',
         'Aplicar compresa fría para reducir hinchazón',
@@ -246,26 +251,26 @@ const ProtocolSearchScreen = ({ route }) => {
       steps: [
         '1. Identificar el animal (importante para tratamiento)',
         '2. Para picaduras de abeja/avispa:',
-        '   - Retirar aguijón sin apretar el saco de veneno',
-        '   - Aplicar compresa fría',
+        '   - Retirar aguijón sin apretar el saco de veneno',
+        '   - Aplicar compresa fría',
         '3. Para mordedura de serpiente:',
-        '   - Mantener la zona afectada por debajo del corazón',
-        '   - No succionar veneno, no hacer torniquete',
-        '   - Marcar zona de hinchazón con hora para monitorear progreso',
+        '   - Mantener la zona afectada por debajo del corazón',
+        '   - No succionar veneno, no hacer torniquete',
+        '   - Marcar zona de hinchazón con hora para monitorear progreso',
         '4. Para arañas/alacranes:',
-        '   - Aplicar compresa fría',
-        '   - Capturar el animal si es seguro para identificación',
+        '   - Aplicar compresa fría',
+        '   - Capturar el animal si es seguro para identificación',
         '5. Buscar atención médica si:',
-        '   - Signos de reacción alérgica',
-        '   - Dolor intenso o hinchazón progresiva',
-        '   - Mordedura de serpiente venenosa',
+        '   - Signos de reacción alérgica',
+        '   - Dolor intenso o hinchazón progresiva',
+        '   - Mordedura de serpiente venenosa',
       ],
     },
     {
       keywords: ['hipotermia', 'frío', 'temperatura baja', 'escalofríos', 'congelación', 'tiritona', 'piel pálida'],
       title: 'Hipotermia',
       severity: 'grave',
-      color: '#ec5252',
+      color: Colorsth.danger,
       immediateActions: [
         'Mover a la persona a lugar cálido y seco',
         'Quitar ropa mojada cuidadosamente',
@@ -277,8 +282,8 @@ const ProtocolSearchScreen = ({ route }) => {
         '3. Si está consciente y puede tragar: ofrecer líquidos calientes no alcohólicos',
         '4. No frotar ni masajear extremidades (riesgo de daño tisular)',
         '5. Para congelación:',
-        '   - Sumergir en agua tibia (37-39°C) hasta que piel se sonrojee',
-        '   - No usar calor directo (estufas, fuego)',
+        '   - Sumergir en agua tibia (37-39°C) hasta que piel se sonrojee',
+        '   - No usar calor directo (estufas, fuego)',
         '6. Evitar que camine si tiene congelación en pies',
         '7. Trasladar a centro médico urgentemente',
       ],
@@ -287,7 +292,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['shock', 'choque', 'trauma', 'pulso rápido', 'piel fría', 'palidez', 'sudoración', 'confusión'],
       title: 'Shock',
       severity: 'grave',
-      color: '#ec5252',
+      color: Colorsth.danger,
       immediateActions: [
         'Llamar a emergencias inmediatamente',
         'Acostar a la persona con pierlas elevadas 30 cm (excepto si lesión cabeza/cuello)',
@@ -308,7 +313,7 @@ const ProtocolSearchScreen = ({ route }) => {
       keywords: ['diabetes', 'hipoglucemia', 'azúcar baja', 'insulina', 'mareo diabético', 'temblor', 'confusión', 'sudoración'],
       title: 'Emergencias Diabéticas',
       severity: 'moderada',
-      color: '#FFA726',
+      color: Colorsth.warning,
       immediateActions: [
         'Si está consciente y puede tragar: dar azúcar de acción rápida (jugo, caramelos)',
         'Si inconsciente: no poner nada en la boca',
@@ -317,15 +322,15 @@ const ProtocolSearchScreen = ({ route }) => {
       steps: [
         '1. Evaluar nivel de conciencia',
         '2. Para hipoglucemia (azúcar baja):',
-        '   - Dar 15g de carbohidratos simples (ej. 1/2 vaso de jugo)',
-        '   - Repetir en 15 minutos si no mejora',
+        '   - Dar 15g de carbohidratos simples (ej. 1/2 vaso de jugo)',
+        '   - Repetir en 15 minutos si no mejora',
         '3. Para hiperglucemia (azúcar alta):',
-        '   - No dar insulina a menos que sea el propio paciente',
-        '   - Buscar atención médica urgente',
+        '   - No dar insulina a menos que sea el propio paciente',
+        '   - Buscar atención médica urgente',
         '4. Si pierde el conocimiento:',
-        '   - Colocar en posición lateral de seguridad',
-        '   - No administrar nada por boca',
-        '   - Llamar a emergencias',
+        '   - Colocar en posición lateral de seguridad',
+        '   - No administrar nada por boca',
+        '   - Llamar a emergencias',
         '5. Monitorizar signos vitales hasta que llegue ayuda',
       ],
     },
@@ -418,6 +423,14 @@ const ProtocolSearchScreen = ({ route }) => {
         const availableVoices = await Speech.getAvailableVoicesAsync();
         setVoices(availableVoices.filter(v => v.language.includes('es')));
         
+        // Determinar una voz por defecto si no hay una guardada
+        if (!voiceSettings.voice && availableVoices.length > 0) {
+             const defaultVoice = availableVoices.find(v => v.language.includes('es'));
+             if (defaultVoice) {
+                setVoiceSettings(prev => ({ ...prev, voice: defaultVoice.identifier }));
+             }
+        }
+
         if (route.params?.voiceSettings) {
           setVoiceSettings(route.params.voiceSettings);
           await AsyncStorage.setItem('voiceSettings', JSON.stringify(route.params.voiceSettings));
@@ -432,240 +445,274 @@ const ProtocolSearchScreen = ({ route }) => {
     loadSettings();
   }, [route.params]);
 
+  // 🚨 CORRECCIÓN DE ERROR APLICADA AQUÍ
   const filteredProtocols = firstAidProtocols.filter(protocol => 
     protocol.keywords.some(keyword => 
-      keyword.toLowerCase().includes(searchText.toLowerCase())
+      keyword?.toLowerCase().includes(searchText.toLowerCase())
     ) ||
-    protocol.title.toLowerCase().includes(searchText.toLowerCase())
+    protocol.title?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   if (loading) {
     return (
-      <ImageBackground source={BACKGROUND_IMAGE} style={AppThemeProtocolo.backgroundImage}>
-        <View style={AppThemeProtocolo.loadingContainer}>
-          <ActivityIndicator size="large" color={Colorsth.light} />
-          <Text style={AppThemeProtocolo.loadingText}>Cargando configuración...</Text>
-        </View>
-      </ImageBackground>
+      <LinearGradient
+        colors={[Colorsth.background, Colorsth.dark]} // Fondo oscuro
+        style={AppThemeProtocolo.loadingContainer}
+      >
+        <ActivityIndicator size="large" color={Colorsth.light} />
+        <Text style={AppThemeProtocolo.loadingText}>Cargando configuración...</Text>
+      </LinearGradient>
     );
   }
 
   return (
-    <ImageBackground source={BACKGROUND_IMAGE} style={AppThemeProtocolo.backgroundImage}>
-      <View style={AppThemeProtocolo.overlay}>
-        <TextInput
-          style={AppThemeProtocolo.input}
-          placeholder="Buscar protocolo (ej. quemadura, herida)..."
-          placeholderTextColor="#DDD"
-          value={searchText}
-          onChangeText={setSearchText}
-          autoFocus
-          clearButtonMode="while-editing"
-        />
+    <LinearGradient
+      colors={[Colorsth.background, Colorsth.dark]} // Fondo oscuro/futurista
+      style={AppThemeProtocolo.gradientBackground}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          {/*
+            APLICANDO TOP APARTIR a la barra de búsqueda (TextInput) 
+            Añadido marginTop: 20 (subido de 40)
+          */}
+          <TextInput
+            style={[AppThemeProtocolo.input, { marginTop: 20 }]} 
+            placeholder="Buscar protocolo (ej. quemadura, herida)..."
+            placeholderTextColor={Colorsth.textDimmed}
+            value={searchText}
+            onChangeText={setSearchText}
+            autoFocus
+            clearButtonMode="while-editing"
+          />
 
-        {selectedProtocol ? (
-          <ScrollView style={[AppThemeProtocolo.card, { marginBottom: 20 }]}>
-            <View style={{ borderBottomWidth: 1, borderBottomColor: '#EEE', paddingBottom: 10 }}>
-              <Text style={[AppThemeProtocolo.title, {color: selectedProtocol.color}]}>
-                {selectedProtocol.title}
-              </Text>
-              <Text style={AppThemeProtocolo.subtitle}>
-                Gravedad: {selectedProtocol.severity.toUpperCase()}
-              </Text>
-            </View>
+          {selectedProtocol ? (
+            <ScrollView style={[AppThemeProtocolo.card, { flex: 1 }]}>
+              <View style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.2)', paddingBottom: 15, marginBottom: 15 }}>
+                <Text style={[AppThemeProtocolo.title, {color: selectedProtocol.color}]}>
+                  {selectedProtocol.title}
+                </Text>
+                <Text style={[AppThemeProtocolo.subtitle, { color: Colorsth.light, marginTop: 0 }]}>
+                  Gravedad: {selectedProtocol.severity?.toUpperCase()}
+                </Text>
+              </View>
 
-            <TouchableOpacity 
-              style={[AppThemeProtocolo.button, { backgroundColor: Colorsth.info, borderColor: Colorsth.info }]}
-              onPress={handleSearchFromDetail}
-            >
-              <Text style={AppThemeProtocolo.buttonText}>Nueva Búsqueda</Text>
-            </TouchableOpacity>
-
-            <View style={styles.controlsContainer}>
-              {playbackStatus === 'idle' ? (
-                <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                  <TouchableOpacity 
-                    style={[AppThemeProtocolo.button, AppThemeProtocolo.primaryButton]}
-                    onPress={readEssentialInfo}
-                    disabled={!voiceSettings.voice}
+              {/* CONTROLES DE LECTURA (con espaciado mejorado) */}
+              <View style={styles.controlsContainer}>
+                 {/* Nueva Búsqueda - Botón destacado */}
+                 <TouchableOpacity 
+                    style={[AppThemeProtocolo.button, AppThemeProtocolo.infoButton, { minWidth: '100%', marginBottom: 10 }]}
+                    onPress={handleSearchFromDetail}
                   >
-                    {playbackStatus === 'loading' ? (
-                      <ActivityIndicator color="#FFF" />
-                    ) : (
-                      <Text style={AppThemeProtocolo.buttonText}>
-                        {voiceSettings.voice ? 'Leer Protocolo' : 'Voz no disponible'}
-                      </Text>
-                    )}
+                    <Text style={AppThemeProtocolo.buttonText}>🔍 Nueva Búsqueda</Text>
                   </TouchableOpacity>
-                </Animated.View>
-              ) : playbackStatus === 'playing' ? (
-                <>
-                  <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                    <TouchableOpacity 
-                      style={[AppThemeProtocolo.button, AppThemeProtocolo.warningButton]}
-                      onPress={pauseReading}
-                    >
-                      <Text style={AppThemeProtocolo.buttonText}>Pausar</Text>
-                    </TouchableOpacity>
-                  </Animated.View>
-                  <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                    <TouchableOpacity 
-                      style={[AppThemeProtocolo.button, AppThemeProtocolo.dangerButton]}
-                      onPress={stopReading}
-                    >
-                      <Text style={AppThemeProtocolo.buttonText}>Detener</Text>
-                    </TouchableOpacity>
-                  </Animated.View>
-                </>
-              ) : playbackStatus === 'paused' ? (
-                <>
-                  <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+
+                {playbackStatus === 'idle' || playbackStatus === 'loading' ? (
+                  // Botón Leer Protocolo
+                  <Animated.View style={{ transform: [{ scale: buttonScale }], flexGrow: 1 }}>
                     <TouchableOpacity 
                       style={[AppThemeProtocolo.button, AppThemeProtocolo.primaryButton]}
-                      onPress={resumeReading}
+                      onPress={readEssentialInfo}
+                      disabled={!voiceSettings.voice || playbackStatus === 'loading'}
                     >
-                      <Text style={AppThemeProtocolo.buttonText}>Reanudar</Text>
+                      {playbackStatus === 'loading' ? (
+                        <ActivityIndicator color={Colorsth.dark} />
+                      ) : (
+                        <Text style={AppThemeProtocolo.buttonText}>
+                          {voiceSettings.voice ? '🔊 Leer Protocolo' : 'Voz no disponible'}
+                        </Text>
+                      )}
                     </TouchableOpacity>
                   </Animated.View>
-                  <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                    <TouchableOpacity 
-                      style={[AppThemeProtocolo.button, AppThemeProtocolo.dangerButton]}
-                      onPress={stopReading}
-                    >
-                      <Text style={AppThemeProtocolo.buttonText}>Detener</Text>
-                    </TouchableOpacity>
-                  </Animated.View>
-                </>
-              ) : (
-                <ActivityIndicator size="large" color={Colorsth.light} />
-              )}
-              
-              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                <TouchableOpacity 
-                  style={[AppThemeProtocolo.button, AppThemeProtocolo.secondaryButton]}
-                  onPress={handleBack}
-                >
-                  <Text style={AppThemeProtocolo.buttonText}>Volver</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-            
-            <Text style={[AppThemeProtocolo.subtitle, { color: Colorsth.primary }]}>Acciones inmediatas:</Text>
-            <View style={styles.textContainer}>
-              {selectedProtocol.immediateActions.map((action, index) => (
-                <Text key={index} style={styles.actionItem}>• {action}</Text>
-              ))}
-            </View>
-            
-            <Text style={[AppThemeProtocolo.subtitle, { color: Colorsth.primary }]}>Protocolo completo:</Text>
-            <View style={styles.textContainer}>
-              {selectedProtocol.steps.map((step, index) => (
-                <Text key={index} style={styles.stepItem}>{step}</Text>
-              ))}
-            </View>
-          </ScrollView>
-        ) : (
-          <View style={styles.listContainer}>
-            {searchText.length > 0 && (
-              <TouchableOpacity 
-                style={[AppThemeProtocolo.button, { 
-                  backgroundColor: Colorsth.info, 
-                  borderColor: Colorsth.info,
-                  alignSelf: 'flex-start',
-                  padding: 10,
-                }]}
-                onPress={() => {}}
-              >
-                <Text style={AppThemeProtocolo.buttonText}>Buscar: "{searchText}"</Text>
-              </TouchableOpacity>
-            )}
-
-            {filteredProtocols.length > 0 ? (
-              <FlatList
-                data={filteredProtocols}
-                keyExtractor={(item) => item.title}
-                renderItem={({item}) => (
-                  <TouchableOpacity 
-                    style={[styles.protocolCard, {borderLeftColor: item.color}]}
-                    onPress={() => handleSelectProtocol(item)}
-                  >
-                    <Text style={styles.protocolTitle}>{item.title}</Text>
-                    <Text style={styles.protocolKeywords}>
-                      Palabras clave: {item.keywords.slice(0, 3).join(', ')}...
-                    </Text>
-                    <Text style={styles.protocolSeverity}>
-                      Gravedad: {item.severity}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              />
-            ) : (
-              <View style={[AppThemeProtocolo.card, { alignItems: 'center' }]}>
-                <Text style={[AppThemeProtocolo.subtitle, { textAlign: 'center' }]}>
-                  No se encontraron protocolos para "{searchText}"
-                </Text>
-                <TouchableOpacity 
-                  style={[AppThemeProtocolo.button, AppThemeProtocolo.secondaryButton, { marginTop: 20 }]}
-                  onPress={handleBack}
-                >
-                  <Text style={AppThemeProtocolo.buttonText}>Volver</Text>
-                </TouchableOpacity>
+                ) : playbackStatus === 'playing' ? (
+                  <>
+                    {/* Botón Pausar */}
+                    <Animated.View style={{ transform: [{ scale: buttonScale }], flexGrow: 1, marginRight: 10 }}>
+                      <TouchableOpacity 
+                        style={[AppThemeProtocolo.button, AppThemeProtocolo.warningButton]}
+                        onPress={pauseReading}
+                      >
+                        <Text style={AppThemeProtocolo.buttonText}>⏸ Pausar</Text>
+                      </TouchableOpacity>
+                    </Animated.View>
+                    {/* Botón Detener */}
+                    <Animated.View style={{ transform: [{ scale: buttonScale }], flexGrow: 1 }}>
+                      <TouchableOpacity 
+                        style={[AppThemeProtocolo.button, AppThemeProtocolo.dangerButton]}
+                        onPress={stopReading}
+                      >
+                        <Text style={AppThemeProtocolo.buttonText}>🛑 Detener</Text>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  </>
+                ) : playbackStatus === 'paused' ? (
+                  <>
+                    {/* Botón Reanudar */}
+                    <Animated.View style={{ transform: [{ scale: buttonScale }], flexGrow: 1, marginRight: 10 }}>
+                      <TouchableOpacity 
+                        style={[AppThemeProtocolo.button, AppThemeProtocolo.primaryButton]}
+                        onPress={resumeReading}
+                      >
+                        <Text style={AppThemeProtocolo.buttonText}>▶️ Reanudar</Text>
+                      </TouchableOpacity>
+                    </Animated.View>
+                    {/* Botón Detener */}
+                    <Animated.View style={{ transform: [{ scale: buttonScale }], flexGrow: 1 }}>
+                      <TouchableOpacity 
+                        style={[AppThemeProtocolo.button, AppThemeProtocolo.dangerButton]}
+                        onPress={stopReading}
+                      >
+                        <Text style={AppThemeProtocolo.buttonText}>🛑 Detener</Text>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  </>
+                ) : null}
               </View>
-            )}
-          </View>
-        )}
-      </View>
-    </ImageBackground>
+
+              {/* Contenido del Protocolo */}
+              <Text style={[AppThemeProtocolo.subtitle, { color: Colorsth.primary }]}>Acciones inmediatas:</Text>
+              <View style={[styles.textContainer, { borderLeftColor: selectedProtocol.color }]}>
+                {selectedProtocol.immediateActions.map((action, index) => (
+                  <Text key={index} style={styles.actionItem}>⚡ {action}</Text>
+                ))}
+              </View>
+              
+              <Text style={[AppThemeProtocolo.subtitle, { color: Colorsth.primary }]}>Protocolo completo:</Text>
+              <View style={[styles.textContainer, { borderLeftColor: selectedProtocol.color }]}>
+                {selectedProtocol.steps.map((step, index) => (
+                  <Text key={index} style={styles.stepItem}>{step}</Text>
+                ))}
+              </View>
+               
+               {/*
+                 AJUSTE DE POSICIÓN: Botón Volver a Búsqueda
+                 Cambiado marginTop: 40 a marginTop: 20 (subido)
+               */}
+              <TouchableOpacity 
+                style={[AppThemeProtocolo.button, AppThemeProtocolo.secondaryButton, { marginTop: 20, minWidth: '100%' }]}
+                onPress={handleBack}
+              >
+                <Text style={[AppThemeProtocolo.buttonText, { color: Colorsth.secondary }]}>← Volver a Búsqueda</Text>
+              </TouchableOpacity>
+
+            </ScrollView>
+          ) : (
+            <View style={styles.listContainer}>
+              {searchText.length > 0 && (
+                <View style={{ marginBottom: 15 }}>
+                  <Text style={{ color: Colorsth.textDimmed, fontSize: 14 }}>
+                     Resultados de la búsqueda para: "{searchText}"
+                  </Text>
+                </View>
+              )}
+
+              {filteredProtocols.length > 0 ? (
+                <FlatList
+                  data={filteredProtocols}
+                  keyExtractor={(item) => item.title}
+                  renderItem={({item}) => (
+                    <TouchableOpacity 
+                      style={[styles.protocolCard, {borderLeftColor: item.color}]}
+                      onPress={() => handleSelectProtocol(item)}
+                    >
+                      <Text style={[styles.protocolTitle, { color: item.color }]}>{item.title}</Text>
+                      <Text style={styles.protocolKeywords}>
+                        Palabras clave: {item.keywords.slice(0, 3).join(', ')}...
+                      </Text>
+                      {/* 🚨 CORRECCIÓN DE ERROR APLICADA AQUÍ */}
+                      <Text style={styles.protocolSeverity}>
+                        Gravedad: {item.severity?.toUpperCase()}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              ) : (
+                <View style={[AppThemeProtocolo.card, { alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
+                  <Text style={[AppThemeProtocolo.title, { textAlign: 'center', fontSize: 20 }]}>
+                    Protocolo no encontrado
+                  </Text>
+                  <Text style={[AppThemeProtocolo.subtitle, { textAlign: 'center', fontSize: 16, color: Colorsth.textDimmed }]}>
+                    No se encontraron protocolos para "{searchText}". Intenta con otras palabras clave (ej. "fractura", "veneno").
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
-// Estilos específicos del componente
+// Estilos específicos del componente (Adaptados al tema oscuro/neón)
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20, // Padding horizontal
+  },
+  // Mejora del espaciado entre los botones y uso de flexWrap
   controlsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    justifyContent: 'flex-start', // Alinear a la izquierda para mejor flujo
+    marginBottom: 20, 
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10, // Utilizar gap para espaciado entre elementos
+    alignItems: 'center',
   },
+  // Card del protocolo en la lista de resultados
   protocolCard: {
-    ...AppThemeProtocolo.card,
+    ...AppThemeProtocolo.card, // Hereda el estilo neón de la tarjeta
     borderLeftWidth: 5,
+    padding: 18,
+    marginBottom: 12, 
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Más sutil
   },
+  // Título del protocolo en la lista
   protocolTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#222',
+    marginBottom: 6,
+    color: Colorsth.light, // Texto claro por defecto
   },
+  // Palabras clave en la lista
   protocolKeywords: {
     fontSize: 14,
-    color: '#555',
-    marginBottom: 4,
+    color: Colorsth.textDimmed,
+    opacity: 0.8,
     fontStyle: 'italic',
+    marginBottom: 4,
   },
+  // Severidad en la lista
   protocolSeverity: {
     fontSize: 14,
-    color: '#333',
-    fontWeight: '600',
+    color: Colorsth.secondary, 
+    fontWeight: '700',
   },
+  // Contenedor de texto para acciones/pasos
   textContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Fondo oscuro semi-transparente
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: Colorsth.secondary,
   },
+  // Elementos de acción inmediata
   actionItem: {
     fontSize: 16,
-    marginBottom: 8,
-    marginLeft: 8,
-    color: '#333',
+    marginBottom: 10,
+    marginLeft: 5,
+    color: Colorsth.light,
     lineHeight: 24,
   },
+  // Pasos del protocolo
   stepItem: {
     fontSize: 16,
-    marginBottom: 12,
-    color: '#333',
+    marginBottom: 10,
+    color: Colorsth.light,
     lineHeight: 24,
   },
   listContainer: {

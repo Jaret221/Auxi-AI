@@ -1,114 +1,117 @@
-// src/theme/AppTheme.js
 import { StyleSheet } from 'react-native';
+import { Colorsth } from './Colors'; // Importamos la paleta
 
 export const AppThemeProtocolo = StyleSheet.create({
-  // Estilos generales
-  backgroundImage: {
+  // Contenedor principal (para el gradiente)
+  gradientBackground: {
     flex: 1,
-    resizeMode: 'cover',
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    padding: 16,
+    padding: 20,
+    // No necesitamos overlay si usamos LinearGradient
   },
-  
-  // Componentes comunes
-  card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 12,
-    elevation: 2,
-  },
-  
-  // Textos
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
-  },
-  
-  subtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-    color: '#333',
-  },
-  
-  // Botones
-  button: {
-    padding: 12,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    elevation: 3,
-    minWidth: '30%',
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  
-  // Variantes de botones
-  primaryButton: {
-    backgroundColor: '#27AE60',
-    borderColor: '#219653',
-  },
-  secondaryButton: {
-    backgroundColor: '#3498DB',
-    borderColor: '#2980B9',
-  },
-  dangerButton: {
-    backgroundColor: '#E74C3C',
-    borderColor: '#C0392B',
-  },
-  warningButton: {
-    backgroundColor: '#F39C12',
-    borderColor: '#E67E22',
-  },
-  
-  // Inputs
-  input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 15,
-    borderRadius: 8,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#DDD',
-    color: '#333',
-    marginBottom: 12,
-  },
-  
-  // Loading
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: Colorsth.background, 
   },
   loadingText: {
-    marginTop: 20,
+    color: Colorsth.light,
+    marginTop: 10,
     fontSize: 16,
-    color: '#FFFFFF',
   },
+  // Input con estilo neón
+  input: {
+    height: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    fontSize: 16,
+    color: Colorsth.light,
+    borderWidth: 1,
+    borderColor: Colorsth.primary,
+    // Sombra para efecto neón
+    shadowColor: Colorsth.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  // Tarjeta con estilo neón
+  card: {
+    backgroundColor: Colorsth.cardBackground,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 0, 166, 0.3)', // Borde Rosa
+    shadowColor: Colorsth.secondary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colorsth.light,
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colorsth.light,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  // Botones base
+  button: {
+    paddingVertical: 14,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexGrow: 1, 
+    minWidth: 100,
+    // Sombra base
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  buttonText: {
+    color: Colorsth.dark, // Texto oscuro para botones brillantes
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  // Variantes de botones neón
+  primaryButton: {
+    backgroundColor: Colorsth.primary,
+    shadowColor: Colorsth.primary,
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: Colorsth.secondary,
+    shadowColor: Colorsth.secondary,
+  },
+  warningButton: {
+    backgroundColor: Colorsth.warning,
+    shadowColor: Colorsth.warning,
+    flexGrow: 1,
+    minWidth: '48%',
+  },
+  dangerButton: {
+    backgroundColor: Colorsth.danger,
+    shadowColor: Colorsth.danger,
+    flexGrow: 1,
+    minWidth: '48%',
+  },
+  infoButton: {
+    backgroundColor: Colorsth.info,
+    shadowColor: Colorsth.info,
+  }
 });
-
-// Colores exportables para usar en componentes
-export const Colorsth = {
-  primary: '#27AE60',
-  secondary: '#3498DB',
-  danger: '#E74C3C',
-  warning: '#F39C12',
-  info: '#9B59B6',
-  light: '#ECF0F1',
-  dark: '#2C3E50',
-  success: '#2ECC71',
-};

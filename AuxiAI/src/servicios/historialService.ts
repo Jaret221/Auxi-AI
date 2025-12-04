@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = "http://192.168.77.76:3000/historial";
+const API_URL = "http://192.168.164.130:3000/historial";
 
 // Guardar mensaje en el historial (MongoDB) a través de NestJS
 export const guardarHistorial = async (mensaje: string, tipo: string, gravedad?: string) => {

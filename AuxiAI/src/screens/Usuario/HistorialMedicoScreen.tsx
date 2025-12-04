@@ -1,112 +1,254 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
-import { obtenerHistorial } from "../../servicios/historialService";
+import { 
+  View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator 
+} from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
+import { obtenerHistorial } from "../../servicios/historialService"; // Asegúrate de que esta ruta sea correcta
+
+// --- CONSTANTES DE ESTILO ---
+const COLORS = {
+  BG_MAIN: '#1E1E3F', // Fondo oscuro principal
+  BG_CARD: 'rgba(255, 255, 255, 0.08)', // Tarjeta semi-transparente oscura
+  NEON_BLUE: '#00BFFF', // Azul neón para acentos (Botón Volver)
+  NEON_PURPLE: '#7B68EE', // Púrpura neón (Borde de acento)
+  TEXT_LIGHT: '#E0E0E0', // Texto claro
+  TEXT_ACCENT: '#FFFFFF', // Texto de título
+  
+  // Colores de Gravedad Futurista
+  GRAVE: '#FF4500', // Naranja-Rojo (Grave)
+  MODERADO: '#FFD700', // Dorado (Moderado)
+  LEVE: '#3CB371', // Verde Esmeralda (Leve)
+  DEFAULT: '#5A5A7A', // Gris oscuro
+};
+
+// --- TIPADO (Asumiendo la estructura del historial) ---
+interface HistorialItem {
+  _id: string;
+  tipo: string;
+  mensaje: string;
+  gravedad: "leve" | "moderado" | "grave" | string;
+  createdAt: string;
+}
 
 export const HistorialMedicoScreen = () => {
-  const [historial, setHistorial] = useState<any[]>([]);
+  const [historial, setHistorial] = useState<HistorialItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
   useEffect(() => {
     const cargarHistorial = async () => {
-      const data = await obtenerHistorial();
-      setHistorial(data);
+      try {
+        const data = await obtenerHistorial();
+        setHistorial(data);
+      } catch (error) {
+        console.error("Error al cargar el historial:", error);
+        // Opcional: Mostrar un mensaje de error al usuario
+      } finally {
+        setLoading(false);
+      }
     };
     cargarHistorial();
   }, []);
 
-  const getColor = (gravedad: string) => {
-    switch (gravedad) {
-      case "leve": return "#28a745";
-      case "moderado": return "#ffc107";
-      case "grave": return "#dc3545";
-      default: return "#6c757d";
+  /**
+   * Obtiene el color neón basado en la gravedad.
+   * @param gravedad - La gravedad del evento ('leve', 'moderado', 'grave').
+   */
+  const getColor = (gravedad: string | undefined): string => {
+    // 🚨 CORRECCIÓN CLAVE: Usamos 'gravedad?.toLowerCase() || "default"'
+    // Esto asegura que si gravedad es null/undefined, se usa "default".
+    const safeGravedad = gravedad?.toLowerCase() || "default"; 
+
+    switch (safeGravedad) {
+      case "leve": return COLORS.LEVE;
+      case "moderado": return COLORS.MODERADO;
+      case "grave": return COLORS.GRAVE;
+      default: return COLORS.DEFAULT;
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>📋 Historial Médico</Text>
-
-      {/* 🔹 Botón de volver debajo del título */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.backText}>⬅ Volver</Text>
-      </TouchableOpacity>
-
-      <FlatList
-        data={historial}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        renderItem={({ item }) => (
-          <View style={[styles.card, { borderLeftColor: getColor(item.gravedad) }]}>
-            <View style={styles.header}>
-              <Text style={styles.tipo}>({item.tipo})</Text>
-              <Text style={styles.fecha}>{new Date(item.createdAt).toLocaleString()}</Text>
-            </View>
-            <Text style={styles.mensaje}>{item.mensaje}</Text>
+  /**
+   * Renderiza cada elemento del historial.
+   */
+  const renderItem = ({ item }: { item: HistorialItem }) => {
+    // 🚨 CORRECCIÓN CLAVE: Pasamos item.gravedad directamente a getColor
+    const severityColor = getColor(item.gravedad);
+    const displayGravedad = (item.gravedad || 'Desconocida').toUpperCase();
+    
+    return (
+      <View style={[
+        historialStyles.card, 
+        { 
+          borderColor: severityColor, // Borde lateral dinámico
+          shadowColor: severityColor, // Sombra que simula el brillo neón
+        }
+      ]}>
+        <View style={historialStyles.header}>
+          {/* Usamos un valor por defecto seguro para item.tipo */}
+          <Text style={historialStyles.tipo}>{(item.tipo || 'EVENTO').toUpperCase()}</Text>
+          <View style={[historialStyles.gravedadBadge, { backgroundColor: severityColor }]}>
+            <Text style={historialStyles.gravedadText}>{displayGravedad}</Text>
           </View>
+        </View>
+        
+        <Text style={historialStyles.mensaje}>{item.mensaje}</Text>
+        
+        <Text style={historialStyles.fecha}>
+          <Ionicons name="time-outline" size={12} color={COLORS.TEXT_LIGHT} />
+          {" "} {new Date(item.createdAt).toLocaleString()}
+        </Text>
+      </View>
+    );
+  };
+  
+  if (loading) {
+    return (
+        <View style={historialStyles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.NEON_BLUE} />
+            <Text style={{color: COLORS.TEXT_LIGHT, marginTop: 10}}>Cargando historial...</Text>
+        </View>
+    );
+  }
+
+  return (
+    <LinearGradient
+      colors={[COLORS.BG_MAIN, COLORS.BG_MAIN, '#303cbd']} // Gradiente oscuro/futurista
+      style={historialStyles.gradientBackground}
+    >
+      <SafeAreaView style={historialStyles.safeArea}>
+        
+        {/* Botón volver */}
+        <TouchableOpacity style={historialStyles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.NEON_BLUE} />
+          <Text style={historialStyles.backText}>Volver</Text>
+        </TouchableOpacity>
+        
+        <Text style={historialStyles.title}>⚕️ Historial Médico</Text>
+
+        {historial.length === 0 ? (
+          <View style={historialStyles.emptyState}>
+            <Ionicons name="archive-outline" size={60} color={COLORS.DEFAULT} />
+            <Text style={historialStyles.emptyText}>No hay registros médicos aún.</Text>
+            <Text style={historialStyles.emptyTextSmall}>Tu historial se llenará con eventos de salud y emergencias.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={historial}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={historialStyles.listContent}
+            renderItem={renderItem}
+          />
         )}
-      />
-    </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
+// --- ESTILOS MEJORADOS ---
+const historialStyles = StyleSheet.create({
+  gradientBackground: {
     flex: 1,
-    backgroundColor: "#e9f5f9",
-    paddingHorizontal: 15,
-    paddingTop: 50,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#0d6efd",
-    textAlign: "center",
-    marginBottom: 15,
+  safeArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  loadingContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: COLORS.BG_MAIN,
   },
   backButton: {
-    alignSelf: "flex-start", // Colocado a la izquierda
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: "#0d6efd",
-    borderRadius: 8,
-    marginBottom: 20, // espacio antes de la lista
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 20,
   },
   backText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
+    color: COLORS.NEON_BLUE,
+    fontSize: 16,
+    marginLeft: 5,
+    fontWeight: '700',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLORS.TEXT_ACCENT,
+    textAlign: 'center',
+    marginBottom: 25,
+    textShadowColor: COLORS.NEON_PURPLE,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  listContent: { 
+    paddingBottom: 40 
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.BG_CARD,
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    borderLeftWidth: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    padding: 18,
+    marginBottom: 15,
+    borderLeftWidth: 5,
+    // Efecto de brillo sutil en las tarjetas
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 5,
+    elevation: 5,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 10,
   },
   tipo: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#495057",
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.TEXT_ACCENT,
   },
-  fecha: {
+  gravedadBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 5,
+  },
+  gravedadText: {
     fontSize: 12,
-    color: "#6c757d",
+    fontWeight: 'bold',
+    color: COLORS.BG_MAIN, // Texto oscuro sobre badge neón
   },
   mensaje: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#212529",
+    color: COLORS.TEXT_LIGHT,
+    marginBottom: 10,
+    lineHeight: 24,
   },
+  fecha: {
+    fontSize: 12,
+    color: COLORS.TEXT_LIGHT,
+    opacity: 0.7,
+    textAlign: 'right',
+    marginTop: 5,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: COLORS.TEXT_LIGHT,
+    marginTop: 15,
+    fontWeight: 'bold',
+  },
+  emptyTextSmall: {
+    fontSize: 14,
+    color: COLORS.DEFAULT,
+    marginTop: 5,
+    textAlign: 'center',
+  }
 });

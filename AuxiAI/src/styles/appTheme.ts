@@ -1,63 +1,69 @@
 // src/styles/appTheme.ts
-import { StyleSheet, Dimensions } from "react-native";
+import { Dimensions } from 'react-native';
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get('window');
 
-export const appTheme = StyleSheet.create({
+const colors = {
+  primary: '#00677F',
+  secondary: '#50C878',
+  background: '#F0F8FF',
+  white: '#FFFFFF',
+  black: '#000000',
+  text: '#333333',
+  textLight: '#777777',
+  error: '#E74C3C',
+  
+  // Colores del gradiente de HomeScreen
+  gradientStart: '#E0F7FA', // <--- Aquí está 'gradientStart'
+  gradientMid: '#FFFFFF',
+  gradientEnd: '#E8F5E9',
+
+  menuBackground: '#FFFFFF',
+  overlay: 'rgba(0, 0, 0, 0.5)',
+};
+
+// Define tus espaciados
+const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16, // <--- Aquí está 'md'
+  lg: 24,
+  xl: 32,
+};
+
+// Define tu tipografía
+const typography = {
+  h1: { fontSize: 28, fontWeight: 'bold', color: colors.primary },
+  h2: { fontSize: 24, fontWeight: '600', color: colors.primary },
+  h3: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  body: { fontSize: 16, color: colors.text },
+};
+
+// Define elementos de layout comunes
+const layout = {
+  window: { width, height },
+  shadow: {
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  borderRadius: {
+    small: 8,
+    medium: 12,
+    large: 20,
+    circle: 999,
+  },
   container: {
     flex: 1,
+    padding: spacing.md,
   },
-  backgroundImage: {
-    flex: 1,
-    resizeMode: "cover",
-    justifyContent: "center",
-  },
-  menuButton: {
-    position: "absolute",
-    top: 40,
-    right: 20,
-    backgroundColor: "rgba(239, 236, 236, 0.6)",
-    padding: 12,
-    borderRadius: 30,
-    zIndex: 1,
-  },
-  menuContainer: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    height: "100%",
-    width: width * 0.5, // ancho del menú 20%
-    backgroundColor: "rgba(110, 199, 207, 0.32)",
-    paddingTop: 80,
-    paddingHorizontal: 10,
-    alignItems: "center",
-    zIndex: 1,
-  },
-  menuTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#fff",
-  },
-  menuItem: {
-    fontSize: 16,
-    marginVertical: 15,
-    color: "#fff",
-    textAlign: "center",
-  },
-  logoutButton: {
-    position: "absolute",
-    bottom: 30,
-    left: 10,
-    right: 10,
-    padding: 12,
-    backgroundColor: "#e74c3c",
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  logoutText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-});
+};
+
+export const appTheme = {
+  colors,
+  spacing,
+  typography,
+  layout,
+};

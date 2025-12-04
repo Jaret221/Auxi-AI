@@ -2,32 +2,47 @@
   "expo": {
     "name": "AuxiAI",
     "slug": "AuxiAI",
-    "version": "1.0.0",
+    "version": "1.5.0",
     "orientation": "portrait",
-    "icon": "./assets/AuxiFondo.png",
+    "icon": "./assets/Fondos/new/Fondofic.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/AuxiFondo.png",
+      "image": "./assets/Fondos/new/Fondofic.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/AuxiFondo.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/Fondos/new/Fondofic.png",
+        "backgroundColor": "#ffffff",
+        "package": "com.jaret01.AuxiAI",
+        "versionCode": 2
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.jaret01.auxiai"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-speech-recognition"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7bb043be-1257-4f01-a2cd-064a270d6859"
+      }
+    }
   }
 }
